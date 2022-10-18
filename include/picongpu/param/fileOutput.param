@@ -1,0 +1,27 @@
+#pragma once
+#include <pmacc/meta/conversion/MakeSeq.hpp>
+#include "picongpu/fields/Fields.def"
+#include "picongpu/particles/particleToGrid/ComputeGridValuePerFrame.def"
+#include <boost/mpl/vector.hpp>
+/*FieldTmp output (calculated at runtime)
+  Those operations derive scalar field quant. from particle species at runtime. Each val is mapped per cell. Some ops are identical
+  up to a constant, so avoid writing those twice. Can choose any of these particle to grid projections:
+  - Density: particle position + shape on the grid
+  - BoundElectronDensity: dens of bound electrons (only makes sense for partially ionized ions)
+  - ChargeDensity: dens.*charge (for species that do not change their charge state, this is the same as the dens times a cons for the charge)
+  - Energy: sum of kinetic particle energy per cell with respect to shape
+  - EnergyDensity: av kin part energy per cell times the part dens (the same as the sum of kin part energy divided by a const for the cell vol)
+  - MomentumComponent: ratio between a selected momentum component and the absolute momentum with respect to shape
+    define component as 0=X (default), 1=Y or 2=Z (results: [-1.:1.])
+  - LarmorPower: radiated Larmor power (species must contain the attribute `momentumPrev1`)
+*/
+
+namespace picongpu
+	{
+		namespace deriveField = particles::particleToGrid;
+		using FieldTmpSolvers = MakeSeq_t<  >;
+		using NativeFileOutputFields = MakeSeq_t<>;
+		using FileOutputFields = MakeSeq_t< NativeFileOutputFields, FieldTmpSolvers >;
+		using FileOutputParticles = MakeSeq_t< Electrons >;
+
+	} // end of picongpu namespace

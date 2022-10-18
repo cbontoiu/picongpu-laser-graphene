@@ -1,0 +1,119 @@
+#pragma once
+#include "picongpu/particles/manipulators/manipulators.def"
+#include "picongpu/particles/startPosition/functors.def"
+#include "picongpu/particles/traits/GetAtomicNumbers.hpp"
+#include <pmacc/math/operation.hpp>
+
+namespace picongpu
+	{
+
+	namespace particles
+		{
+			constexpr float_X MIN_WEIGHTING = 1.000e-06;
+
+		namespace manipulators
+			{
+				// ionize ions once by removing one bound electron
+				struct OnceIonizedImpl
+					{
+						template< typename T_Particle > DINLINE void operator()( T_Particle& particle )
+							{
+								constexpr float_X protonNumber = GetAtomicNumbers< T_Particle >::type::numberOfProtons;
+								particle[ boundElectrons_ ] = protonNumber - 1.0_X;
+							}
+					};// end of OnceIonizedImpl
+
+				using OnceIonized = generic::Free< OnceIonizedImpl >;
+
+				// ionize ions twice
+				struct TwiceIonizedImpl
+					{
+						template< typename T_Particle > DINLINE void operator()( T_Particle& particle )
+							{
+								constexpr float_X protonNumber = GetAtomicNumbers< T_Particle >::type::numberOfProtons;
+								particle[ boundElectrons_ ] = protonNumber - 2.0_X;
+							}
+					};// end of TwiceIonizedImpl
+
+				using TwiceIonized = generic::Free< TwiceIonizedImpl >;
+
+				// ionize ions three times
+				struct ThreeTimesIonizedImpl
+					{
+						template< typename T_Particle > DINLINE void operator()( T_Particle& particle )
+							{
+								constexpr float_X protonNumber = GetAtomicNumbers< T_Particle >::type::numberOfProtons;
+								particle[ boundElectrons_ ] = protonNumber - 3.0_X;
+							}
+					};// end of ThreeTimesIonizedImpl
+
+				using ThreeTimesIonized = generic::Free< ThreeTimesIonizedImpl >;
+
+				// ionize ions four times
+				struct FourTimesIonizedImpl
+					{
+						template< typename T_Particle > DINLINE void operator()( T_Particle& particle )
+							{
+								constexpr float_X protonNumber = GetAtomicNumbers< T_Particle >::type::numberOfProtons;
+								particle[ boundElectrons_ ] = protonNumber - 4.0_X;
+							}
+					};// end of FourTimesIonizedImpl
+
+				using FourTimesIonized = generic::Free< FourTimesIonizedImpl >;
+
+				// ionize ions five times
+				struct FiveTimesIonizedImpl
+					{
+						template< typename T_Particle > DINLINE void operator()( T_Particle& particle )
+							{
+								constexpr float_X protonNumber = GetAtomicNumbers< T_Particle >::type::numberOfProtons;
+								particle[ boundElectrons_ ] = protonNumber - 5.0_X;
+							}
+					};// end of FiveTimesIonizedImpl
+
+				using FiveTimesIonized = generic::Free< FiveTimesIonizedImpl >;
+
+				// ionize ions six times
+				struct SixTimesIonizedImpl
+					{
+						template< typename T_Particle > DINLINE void operator()( T_Particle& particle )
+							{
+								constexpr float_X protonNumber = GetAtomicNumbers< T_Particle >::type::numberOfProtons;
+								particle[ boundElectrons_ ] = protonNumber - 6.0_X;
+							}
+					};// end of SixTimesIonizedImpl
+
+				using SixTimesIonized = generic::Free< SixTimesIonizedImpl >;
+
+				//! changes the in-cell position of each particle of a species
+				using RandomPosition = unary::RandomPosition;
+
+			} // end of manipulators namespace
+
+		namespace startPosition
+			{
+				struct RandomParameter2ppc
+					{
+						static constexpr uint32_t numParticlesPerCell = 2u;
+					};
+
+				using Random2ppc = RandomImpl< RandomParameter2ppc >;
+
+				// probe particles sit directly in lower corner of the cell
+				CONST_VECTOR(float_X, 3, InCellOffset, 0.0, 0.0, 0.0);
+
+				struct OnePositionParameter
+					{
+						static constexpr uint32_t numParticlesPerCell = 1u;
+						const InCellOffset_t inCellOffset;
+					};
+
+				using OnePosition = OnePositionImpl< OnePositionParameter >;
+
+			} // end of startPosition namespace
+
+		constexpr uint32_t TYPICAL_PARTICLES_PER_CELL = startPosition::RandomParameter2ppc::numParticlesPerCell;
+
+		} // end of particles namespace
+
+	} // end of picongpu namespace

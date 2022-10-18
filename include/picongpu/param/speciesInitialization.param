@@ -1,0 +1,16 @@
+#pragma once
+#include "picongpu/particles/InitFunctors.hpp"
+
+namespace picongpu
+	{
+		namespace particles
+			{
+				using InitPipeline = bmpl::vector<
+					CreateDensity< densityProfiles::Geometry, startPosition::Random2ppc, Carbon >,
+					Manipulate< manipulators::unary::RandomPosition, Carbon>,
+					Manipulate< manipulators::ThreeTimesIonized, Carbon >,
+					ManipulateDerive< manipulators::binary::UnboundElectronsTimesWeighting, Carbon, Electrons >
+				>; // end InitPipeline
+			} // end of particles namespace
+
+	} // end of picongpu namespace

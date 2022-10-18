@@ -1,0 +1,8 @@
+#pragma once
+// Possible values: DIM3 for 3D3V and DIM2 for 2D3V.
+#define SIMDIM DIM2
+
+namespace picongpu
+{
+    constexpr uint32_t simDim = SIMDIM;
+} // namespace picongpu

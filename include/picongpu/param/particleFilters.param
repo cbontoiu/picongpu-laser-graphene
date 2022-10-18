@@ -1,0 +1,62 @@
+#pragma once
+#include "picongpu/particles/filter/filter.def"
+#include "picongpu/particles/traits/SpeciesEligibleForSolver.hpp"
+#include "picongpu/particles/filter/generic/FreeTotalCellOffset.def"
+#include <pmacc/traits/HasFlag.hpp>
+#include <pmacc/traits/HasIdentifiers.hpp>
+
+namespace picongpu
+	{
+		constexpr double TRAVELLED_PULSE_DISTANCE = 9.000000e-07; // [m]
+		constexpr double slope = 2.906e+08; // [m/s] slope to fix bubble ellipse
+		constexpr double intercept = -8.642e-07; // [m] intercept to fix bubble ellipse
+
+		namespace particles
+		{
+			namespace filter
+			{
+				// Note: filter All is defined in picongpu/particles/filter/filter.def
+				namespace detail
+					{
+						// select particles within the first bubble ----------------------------
+						struct FunctorBubble1
+							{
+								uint32_t m_currentStep;
+								HDINLINE FunctorBubble1(uint32_t currentStep): m_currentStep(currentStep) {}
+								template < typename T_Particle >
+								HDINLINE bool operator()(DataSpace<simDim> const totalCellOffset, T_Particle const & particle)
+									{
+										double yShift, yMid;
+										pmacc::DataSpace<simDim> minAcceptedCell, maxAcceptedCell;
+										yShift = intercept + m_currentStep * ::picongpu::SI::DELTA_T_SI * slope; // y = y0 + m*t
+										yMid = ::picongpu::SI::SPEED_OF_LIGHT_SI * m_currentStep * ::picongpu::SI::DELTA_T_SI - yShift; // ct - yShift
+										minAcceptedCell.y() = (yMid - 0.5*TRAVELLED_PULSE_DISTANCE ) / ::picongpu::SI::CELL_HEIGHT_SI;
+										maxAcceptedCell.y() = (yMid + 0.5*TRAVELLED_PULSE_DISTANCE ) / ::picongpu::SI::CELL_HEIGHT_SI;
+										minAcceptedCell.x() = 1530;
+										maxAcceptedCell.x() = 2118;
+										// This can be any condition depending on totalCellOffset and particle
+										return(  (totalCellOffset.y() >= minAcceptedCell.y()) && 
+												 (totalCellOffset.y() <= maxAcceptedCell.y()) && 
+												 (totalCellOffset.x() >= minAcceptedCell.x()) && 
+												 (totalCellOffset.x() <= maxAcceptedCell.x()) );
+									} // end HDINLINE operator
+							static constexpr char const * name = "Bubble1";
+							}; // end struct FunctorBubble1
+							using Bubble1 = generic::FreeTotalCellOffset < FunctorBubble1 >;
+
+					} // end of detail namespace
+
+				// collect all filters ----------------------------
+				using AllParticleFilters = MakeSeq_t < All, detail::Bubble1 >;
+
+			} // end of filter namespace
+
+		namespace traits
+			{
+				// if needed for generic free filters place `SpeciesEligibleForSolver` traits for filters here
+
+			} // end of traits namespace
+
+		} // end of particles namespace
+
+	} // end of picongpu namespace

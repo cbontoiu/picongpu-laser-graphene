@@ -1,0 +1,101 @@
+#pragma once
+#include "picongpu/particles/densityProfiles/profiles.def"
+#include <pmacc/preprocessor/struct.hpp>
+
+namespace picongpu
+	{
+		namespace SI
+			{
+				constexpr float_64 BASE_DENSITY_SI = 1.1400e+29;
+			} // end of SI namespace
+
+		namespace densityProfiles
+			{
+				constexpr double MARGINY_LEFT = 1.000e-06; // [m] left longitudinal margin
+				constexpr double MARGINY_RIGHT = 1.000e-06; // [m] right longitudinal margin
+				constexpr double LENGTH = 2.000e-06; // [m]
+				constexpr double LAYER_THICKNESS = 3.400e-10; // [m] thick-wall thickness
+				constexpr double INTER_LAYERS_GAP = 1.400e-10; // [m] gap between layers
+				constexpr double BENDING_LEFT_Y_RANGE = 0.000e+00; // [m] dist. from left margin to the mid. layers edge
+				constexpr double dY_LEFT = 0.000e+00; // [m]
+				constexpr double BENDING_RIGHT_Y_RANGE = 0.000e+00; // [m] dist. from right margin to the mid. layers edge
+				constexpr double dY_RIGHT = 0.000e+00; // [m]
+				constexpr double HOLLOW_WIDTH = 0.000e+00; // [m] empty space in the middle at x = 0
+				constexpr int NLAYERS = 60; // number of layers
+				constexpr double SIDEY = 4.000e-06; // [m] longitudinal size
+				constexpr double SHIFTX = 8.000e-07; // [m] vertical centre of the target
+
+				struct PlatesFunctor 
+					{
+						int SCALING_INTER_LAYERS_GAP [30] = {143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143};
+						// NO MOVING WINDOW (with right limit) : laser parallel to the layers
+						// get all x-centres, left y-edges and right y-edges
+						HDINLINE void getXCentresYEdges( double arrayX[], double arrayYleft[], double arrayYright[] )
+							{
+								double OFFSETS [30];
+								for(int k = 0; k < NLAYERS/2; k++)
+									{
+									if(k == 0)
+										{
+											double gap = SCALING_INTER_LAYERS_GAP[k]*INTER_LAYERS_GAP/2.0; // current gap size
+											double lower = SHIFTX + gap + HOLLOW_WIDTH/2.0; // the lowest x-edge of the layer
+											double pointX = lower + LAYER_THICKNESS/2.0; // x-middle point
+											arrayX[k] = pointX;
+											arrayYleft[k] = MARGINY_LEFT + BENDING_LEFT_Y_RANGE; // y-left edge point for the middle layer
+											arrayYright[k] = MARGINY_LEFT + LENGTH + BENDING_RIGHT_Y_RANGE; // y-right edge point for the middle layer
+											OFFSETS[k] = pointX - SHIFTX; // collect shift from longitudinal axis
+										}
+									else
+										{
+											double gap = SCALING_INTER_LAYERS_GAP[k]*INTER_LAYERS_GAP; // current gap size
+											double lower = arrayX[k-1] + gap + LAYER_THICKNESS/2.0; // the lowest x-edge of the layer
+											double pointX = lower + LAYER_THICKNESS/2.0; // x-middle point
+											arrayX[k] = pointX;
+											arrayYleft[k] = MARGINY_LEFT + BENDING_LEFT_Y_RANGE - k*dY_LEFT; // y-left edge point for the middle layer
+											arrayYright[k] = MARGINY_LEFT + LENGTH + BENDING_RIGHT_Y_RANGE - k*dY_RIGHT; // y-right edge point for the middle layer
+											OFFSETS[k] = pointX - SHIFTX; // collect shift from longitudinal axis
+										}
+									}
+								for(int m = 0; m < NLAYERS/2; m++)
+									{
+										arrayX[NLAYERS/2 + m] = SHIFTX - OFFSETS[m]; // collect x-middle point of each layer under the longitudinal axis
+										arrayYleft[NLAYERS/2 + m] = arrayYleft[m]; // collect left y-edge point of each layer under the longitudinal axis
+										arrayYright[NLAYERS/2 + m] = arrayYright[m]; // collect right y-edge point of each layer under the longitudinal axis
+									}
+							} // end operator
+
+						// operator to assign density
+						HDINLINE float_X operator()( const floatD_64& position_SI, const float3_64& cellSize_SI )
+							{
+								const float_64 x( position_SI.x() );
+								const float_64 y( position_SI.y() );
+								float_64 dens = 0.0;
+								// initiate centres ----------------
+								double centresX[ NLAYERS ];
+								double edgesYleft[ NLAYERS ];
+								double edgesYright[ NLAYERS ];
+								getXCentresYEdges(centresX, edgesYleft, edgesYright);
+
+								// loop over all layers
+								for(int k = 0; k < NLAYERS; k++)
+									{
+										if( y >= edgesYleft[k] && y <= edgesYright[k])
+											{
+												if( x >= centresX[k] - LAYER_THICKNESS/2 && x <= centresX[k] + LAYER_THICKNESS/2  )
+													dens = 1.0;
+											}
+									}
+
+								// safety check: all parts of the function MUST be > 0
+								dens *= float_64( dens >= 0.0 );
+								return dens;
+							} // end operator
+
+					}; // end of PlatesFunctor
+
+				// definition of free formula profile
+				using Geometry = FreeFormulaImpl< PlatesFunctor >;
+
+			}// end of densityProfiles namespace
+
+	} // end of picongpu namespace

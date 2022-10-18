@@ -1,0 +1,17 @@
+#pragma once
+#include "picongpu/fields/MaxwellSolver/Solvers.def"
+#include <boost/preprocessor/punctuation/comma.hpp>
+
+namespace picongpu
+{
+	namespace fields
+	{
+
+		#ifndef PARAM_FIELDSOLVER
+		//update your CELL_WIDTH_SI in `grid.param` to fulfill the convergence condition (CFL)
+		#define PARAM_FIELDSOLVER Yee
+		#endif
+		using Solver = maxwellSolver::PARAM_FIELDSOLVER;
+
+	} // end of fields namespace
+} // end of picongpu namespace

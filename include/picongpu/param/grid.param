@@ -1,0 +1,38 @@
+#pragma once
+
+namespace picongpu
+{
+	constexpr double ABSPOW = 1.00e-03;
+	constexpr uint32_t ABSCELLS = 16;
+
+	namespace SI
+	{
+		constexpr uint32_t CELLSX = 7984;
+		constexpr uint32_t CELLSY = 20000;
+		constexpr double SIDEX = 1.600000e-06;
+		constexpr double SIDEY = 4.000000e-06;
+		constexpr float_64 CELL_WIDTH_SI  = SIDEX/CELLSX;
+		constexpr float_64 CELL_HEIGHT_SI = SIDEY/CELLSY;
+		constexpr float_64 CELL_DEPTH_SI  = 2.000e-10;
+		constexpr float_64 DELTA_T_SI = 3.853848755e-19;
+	} // end of SI namespace
+
+	// Defines the size of the absorbing zone (in cells)
+	constexpr uint32_t ABSORBER_CELLS[3][2] = 
+	{
+		{ABSCELLS, ABSCELLS},
+		{ABSCELLS, ABSCELLS},
+		{ABSCELLS, ABSCELLS}
+	};
+	 // Defines the strength of the absorber for any direction
+	float_X ABSORBER_STRENGTH[3][2] = 
+	{
+		{ABSPOW, ABSPOW},
+		{ABSPOW, ABSPOW},
+		{ABSPOW, ABSPOW}
+	};
+
+	constexpr uint32_t ABSORBER_FADE_IN_STEPS = 16;
+	constexpr float_64 movePoint = 0.95;
+
+} // end of picongpu namespace

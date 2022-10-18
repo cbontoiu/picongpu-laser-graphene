@@ -1,0 +1,72 @@
+#pragma once
+
+namespace picongpu
+{
+	namespace fields
+	{
+		namespace maxwellSolver
+		{
+			namespace Pml
+			{
+				constexpr uint32_t THICKNESS = 16; 
+				constexpr uint32_t NUM_CELLS[3][2]={
+					{THICKNESS,THICKNESS},
+					{THICKNESS,THICKNESS},
+					{THICKNESS,THICKNESS}};
+				constexpr float_64 SIGMA_KAPPA_GRADING_ORDER = 4.0;
+
+				// [Taflove, Hagness], eq. (7.66)
+
+				constexpr float_64 SIGMA_OPT_SI[3] = {
+					0.8*(SIGMA_KAPPA_GRADING_ORDER+1.0)/(SI::Z0_SI*SI::CELL_WIDTH_SI),
+					0.8*(SIGMA_KAPPA_GRADING_ORDER+1.0)/(SI::Z0_SI*SI::CELL_HEIGHT_SI),
+					0.8*(SIGMA_KAPPA_GRADING_ORDER+1.0)/(SI::Z0_SI*SI::CELL_DEPTH_SI) 
+				};
+
+				// Muptiplier to express SIGMA_MAX_SI with SIGMA_OPT_SI
+				constexpr float_64 SIGMA_OPT_MULTIPLIER = 1.0;
+
+				/** Max value of artificial electric conductivity in PML
+				  * Components correspond to directions: element 0 corresponds to absorption
+				  * along x direction, 1 = y, 2 = z. Grading is described in comments for
+				  * SIGMA_KAPPA_GRADING_ORDER.
+				  * Too small values lead to significant reflections from the external
+				  * border, too large - to reflections due to discretization errors.
+				  * Artificial magnetic permeability will be chosen to perfectly match this.
+				  * Must be >= 0. Normally between 0.7 * SIGMA_OPT_SI and 1.1 * SIGMA_OPT_SI.
+				  * Unit: siemens / m.
+				*/
+				constexpr float_64 SIGMA_MAX_SI[3] = { 
+					SIGMA_OPT_SI[0]*SIGMA_OPT_MULTIPLIER,
+					SIGMA_OPT_SI[1]*SIGMA_OPT_MULTIPLIER,
+					SIGMA_OPT_SI[2]*SIGMA_OPT_MULTIPLIER
+				};
+
+				/** Max value of coordinate stretching coefficient in PML
+				  * Components correspond to directions: element 0 corresponds to absorption
+				  * along x direction, 1 = y, 2 = z. Grading is described in comments for
+				  * SIGMA_KAPPA_GRADING_ORDER.
+				  * Must be >= 1. For relatively homogeneous domains 1.0 is a reasonable value.
+				  * Highly elongated domains can have better absorption with values between
+				  * 7.0 and 20.0, for example, see section 7.11.2 in [Taflove, Hagness].
+				  * Unitless.
+				*/
+				constexpr float_64 KAPPA_MAX[3] = {1.0, 1.0, 1.0};
+
+				/** Order of polynomial grading for complex frequency shift
+				  * The complex frequency shift (alpha) is polynomially downscaling from the
+				  * maximum value (defined below) at the internal border of PML to 0 at the
+				  * external border. The grading is given in [Taflove, Hagness], eq. (7.79),
+				  * with the order denoted 'm_a'.
+				  * Must be >= 0. Normally values are around 1.0.
+				  * Unitless.
+				*/
+				constexpr float_64 ALPHA_GRADING_ORDER = 1.0;
+
+				/* Complex frequency shift in PML */
+				constexpr float_64 ALPHA_MAX_SI[3] = {0.6, 0.6, 0.6};
+
+			} // end of Pml namespace
+		} // end of maxwellSolver namespace
+	} // end of fields namespace
+} // end of picongpu namespace

@@ -1,0 +1,88 @@
+#pragma once
+#include "picongpu/simulation_defines.hpp"
+#include "picongpu/particles/Particles.hpp"
+#include <pmacc/particles/Identifier.hpp>
+#include <pmacc/meta/conversion/MakeSeq.hpp>
+#include <pmacc/identifier/value_identifier.hpp>
+#include <pmacc/particles/traits/FilterByFlag.hpp>
+#include <pmacc/meta/String.hpp>
+
+namespace picongpu
+	{
+
+	/*########################### define particle attributes #####################*/
+
+	//describe attributes of a particle
+	using DefaultParticleAttributes = MakeSeq_t< 
+		position<position_pic>, momentum, weighting, particleId
+	>;
+	//ions also need to have a boundElectrons attribute for ionization
+	using IonParticleAttributes = MakeSeq_t<
+		DefaultParticleAttributes, boundElectrons
+	>;
+
+	/*########################### end particle attributes #####################*/
+
+	/*############################      define species      #####################*/
+
+	/*--------------------------- electrons --------------------------------------*/
+	/* ratio relative to BASE_CHARGE and BASE_MASS */
+	value_identifier( float_X, MassRatioElectrons, 1.0 );
+	value_identifier( float_X, ChargeRatioElectrons, 1.0 );
+
+	using ParticleFlagsElectrons = MakeSeq_t<
+		particlePusher< UsedParticlePusher >,
+		shape< UsedParticleShape >,
+		interpolation< UsedField2Particle >,
+		current< UsedParticleCurrentSolver >,
+		massRatio< MassRatioElectrons >,
+		chargeRatio< ChargeRatioElectrons >
+	>;
+
+	/* define species electrons */
+	using Electrons = Particles<
+		PMACC_CSTRING( "e" ),
+		ParticleFlagsElectrons,
+		DefaultParticleAttributes
+	>;
+
+	/*------------------------------- C ------------------------------------------*/
+	/* ratio relative to BASE_CHARGE and BASE_MASS */
+	value_identifier( float_X, MassRatioCarbon, 22032.0 );
+	value_identifier( float_X, ChargeRatioCarbon, -6.0 );
+
+	/* ratio relative to BASE_DENSITY (n_e) */
+	value_identifier( float_X, DensityRatioCarbon, 1. / 1. );
+		
+	using ParticleFlagsCarbon = MakeSeq_t<
+		particlePusher< UsedParticlePusher >,
+		shape< UsedParticleShape >,
+		interpolation< UsedField2Particle >,
+		current< UsedParticleCurrentSolver >,
+		massRatio< MassRatioCarbon >,
+		chargeRatio< ChargeRatioCarbon >,
+		densityRatio< DensityRatioCarbon >,
+		atomicNumbers< ionization::atomicNumbers::Carbon_t >,
+		ionizationEnergies< ionization::energies::AU::Carbon_t >,
+		effectiveNuclearCharge< ionization::effectiveNuclearCharge::Carbon_t >,
+		ionizers<
+			MakeSeq_t<
+				particles::ionization::BSIEffectiveZ< Electrons >,
+				particles::ionization::ADKLinPol< Electrons >,
+				particles::ionization::ThomasFermi< Electrons >
+			> // end MakeSeq
+		> // end ionizers
+	>; // end ParticleFlagsCarbon
+
+	/* define species Carbon */
+	using Carbon = Particles<
+		PMACC_CSTRING( "C" ),
+		ParticleFlagsCarbon,
+		IonParticleAttributes
+	>;
+
+	/*#########################      end species     #####################*/
+
+	using VectorAllSpecies = MakeSeq_t< Electrons, Carbon, >;
+
+	} // end of picongpu namespace
